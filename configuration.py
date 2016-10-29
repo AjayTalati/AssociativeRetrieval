@@ -1,6 +1,9 @@
 class ModelConfig(object):
 
   def __init__(self):
-    self.sequence_len = 4
+    self.seq_length = 4
+    self.input_length = self.seq_length * 2 + 3
     self.rnn_size = 20
+    self.batch_size = 10
+    self.grad_clip = 5.0
 

@@ -84,7 +84,7 @@ class DataReader():
       _, serialized_input = reader.read(filename_queue)
       inputs = tf.parse_single_example(serialized_input,
                                         features={
-                                         'inputs_seq': tf.FixedLenFeature([self.seq_len], tf.int64),
+                                         'inputs_seq': tf.FixedLenFeature([self.seq_len * 2 + 3], tf.int64),
                                           'output': tf.FixedLenFeature([1], tf.int64)
                                         })
       inputs_seq = inputs['inputs_seq']
@@ -93,9 +93,9 @@ class DataReader():
       return inputs_seqs, outputs
 
 if __name__ == "__main__":
-  # print("Generate Data")
-  # gen = DataGenerator()
-  # gen.generate_inputs_file()
+  print("Generate Data")
+  gen = DataGenerator()
+  gen.generate_inputs_file()
   print("Read data")
   reader = DataReader()
   with tf.Graph().as_default():
