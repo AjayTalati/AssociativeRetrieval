@@ -72,38 +72,51 @@ class DataGenerator():
       writer.write(example.SerializeToString())
 
 class DataReader():
-  def __init__(self, data_directory="./data", data_filename="input_seq"):
-    self.filename_queue = tf.train.string_input_producer([os.path.join(data_directory, data_filename + ".tfrecords")])
+  def __init__(self, seq_len=10, batch_size=32, data_directory="./data", data_filename="input_seq"):
+    self.seq_len = seq_len
+    self.batch_size = batch_size
+    self.filename = os.path.join(data_directory, data_filename + ".tfrecords")
 
   def read(self):
-    reader = tf.TFRecordReader()
-    _, serialized_input = reader.read(self.filename_queue)
-    inputs = tf.parse_single_example(serialized_input,
-                                      features={
-                                        'inputs_seq': tf.FixedLenFeature([23], tf.int64),
-                                        'output': tf.FixedLenFeature([1], tf.int64)
-                                        #'inputs_seq': tf.VarLenFeature(tf.int64),
-                                        #'output': tf.VarLenFeature(tf.int64)
-                                      })
-    inputs_seq = inputs['inputs_seq']
-    output = inputs['output']
-    inputs_seqs, outputs = tf.train.shuffle_batch([inputs_seq, output], batch_size=2, num_threads=1,capacity=16, min_after_dequeue=10)
-    return inputs_seqs, outputs
+    with tf.name_scope('input'):
+      reader = tf.TFRecordReader()
+      filename_queue = tf.train.string_input_producer([self.filename])
+      _, serialized_input = reader.read(filename_queue)
+      inputs = tf.parse_single_example(serialized_input,
+                                        features={
+                                         'inputs_seq': tf.FixedLenFeature([self.seq_len], tf.int64),
+                                          'output': tf.FixedLenFeature([1], tf.int64)
+                                        })
+      inputs_seq = inputs['inputs_seq']
+      output = inputs['output']
+      inputs_seqs, outputs = tf.train.shuffle_batch([inputs_seq, output], batch_size=2, num_threads=1,capacity=16, min_after_dequeue=10)
+      return inputs_seqs, outputs
 
 if __name__ == "__main__":
+  # print("Generate Data")
   # gen = DataGenerator()
-  # print(gen.generate_vocab_dict())
-  # print(gen.generate_input_sequence())
-  # print(gen.generate_inputs())
   # gen.generate_inputs_file()
+  print("Read data")
   reader = DataReader()
-  print("read:\n\n")
+  with tf.Graph().as_default():
+    inputs_seqs, outputs = reader.read()
+    init_op = tf.group(tf.initialize_all_variables(),
+                       tf.initialize_local_variables())
 
-  sess = tf.Session()
-  init = tf.initialize_all_variables()
-  tf.train.start_queue_runners(sess)
-  outputs = (sess.run(reader.read()))
-  # print (outputs)
-  a, b = reader.read()
-  a_np, b_np = sess.run([a, b])
-  print(a_np, b_np)
+    sess = tf.Session()
+    sess.run(init_op)
+
+    coord = tf.train.Coordinator()
+    threads = tf.train.start_queue_runners(sess=sess, coord=coord)
+
+    try:
+      while not coord.should_stop():
+        inputs_seqs_batch, outputs_batch = sess.run([inputs_seqs, outputs])
+        print(inputs_seqs_batch, outputs_batch)
+    except tf.errors.OutOfRangeError:
+      print("Error")
+    finally:
+    # When done, ask the threads to stop.
+      coord.request_stop()
+    coord.join(threads)
+    sess.close()
