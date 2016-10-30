@@ -10,13 +10,13 @@ class LSTM_model(object):
     self.config = config
     self.mode = mode
 
-    self.reader = utils.DataReader(seq_len=config.seq_length, batch_size=config.batch_size)
+    self.reader = utils.DataReader(seq_len=config.seq_length, batch_size=config.batch_size, data_filename=config.data_filename)
 
     self.cell = rnn_cell.BasicLSTMCell(config.rnn_size, state_is_tuple=True)
 
-    self.input_data = tf.placeholder(tf.int32, [config.batch_size, config.input_length])
-    self.targets = tf.placeholder(tf.int32, [config.batch_size, 1])
-    self.initial_state = self.cell.zero_state(config.batch_size, tf.float32)
+    self.input_data = tf.placeholder(tf.int32, [None, config.input_length])
+    self.targets = tf.placeholder(tf.int32, [None, 1])
+    self.initial_state = self.cell.zero_state(tf.shape(self.targets)[0], tf.float32)
 
     with tf.variable_scope("input_embedding"):
       embedding = tf.get_variable("embedding", [config.vocab_size, config.rnn_size])

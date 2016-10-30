@@ -4,7 +4,7 @@ import configuration
 from LSTM_model import LSTM_model
 
 def main():
-  config = configuration.ModelConfig()
+  config = configuration.ModelConfig(data_filename="input_seqs_eval")
   train(config)
 
 def train(config):
@@ -32,7 +32,7 @@ def train(config):
         global_steps += 1
         if global_steps % 1000 == 0:
           model.inference(sess, inputs_seqs_batch, outputs_batch)
-          saver.save(sess, "./save/save", global_step=global_steps)
+          saver.save(sess, "./save/LSTM/save", global_step=global_steps)
     except tf.errors.OutOfRangeError:
       print("Error")
     finally:
