@@ -99,32 +99,6 @@ if __name__ == "__main__":
 
   config = configuration.ModelConfig()
 
-  gen = DataGenerator(config.seq_length, config.batch_size, 10000)
+  #gen = DataGenerator(config.seq_length, config.batch_size, 10000)
+  gen = DataGenerator(config.seq_length, 1, 20000, data_filename="input_seqs_test")
   gen.generate_inputs_file()
-  # print("Read data")
-  # reader = DataReader()
-  # with tf.Graph().as_default():
-  #   inputs_seqs, outputs = reader.read()
-  #   init_op = tf.group(tf.initialize_all_variables(),
-  #                      tf.initialize_local_variables())
-  #
-  #   sess = tf.Session()
-  #   sess.run(init_op)
-  #
-  #   coord = tf.train.Coordinator()
-  #   threads = tf.train.start_queue_runners(sess=sess, coord=coord)
-  #   step = 0
-  #
-  #   try:
-  #     while not coord.should_stop():
-  #       inputs_seqs_batch, outputs_batch = sess.run([inputs_seqs, outputs])
-  #       print(inputs_seqs_batch, outputs_batch)
-  #       print(step)
-  #       step += 1
-  #   except tf.errors.OutOfRangeError:
-  #     print("Error")
-  #   finally:
-  #   # When done, ask the threads to stop.
-  #     coord.request_stop()
-  #   coord.join(threads)
-  #   sess.close()
