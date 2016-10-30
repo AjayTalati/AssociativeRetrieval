@@ -3,10 +3,11 @@ from string import digits
 import numpy as np
 import tensorflow as tf
 import os
+import configuration
 
 
 class DataGenerator():
-  def __init__(self, seq_len=10, batch_size=32, num_batch=10, data_directory="./data", data_filename="input_seq"):
+  def __init__(self, seq_len=4, batch_size=32, num_batch=100, data_directory="./data", data_filename="input_seq"):
     self.seq_len = seq_len
     self.batch_size = batch_size
     self.num_batch = num_batch
@@ -72,7 +73,7 @@ class DataGenerator():
       writer.write(example.SerializeToString())
 
 class DataReader():
-  def __init__(self, seq_len=10, batch_size=32, data_directory="./data", data_filename="input_seq"):
+  def __init__(self, seq_len=4, batch_size=32, data_directory="./data", data_filename="input_seq"):
     self.seq_len = seq_len
     self.batch_size = batch_size
     self.filename = os.path.join(data_directory, data_filename + ".tfrecords")
@@ -89,34 +90,41 @@ class DataReader():
                                         })
       inputs_seq = inputs['inputs_seq']
       output = inputs['output']
-      inputs_seqs, outputs = tf.train.shuffle_batch([inputs_seq, output], batch_size=2, num_threads=1,capacity=16, min_after_dequeue=10)
+      min_after_dequeue = 100
+      inputs_seqs, outputs = tf.train.shuffle_batch([inputs_seq, output], batch_size=self.batch_size, num_threads=2, capacity=min_after_dequeue + 3 * self.batch_size, min_after_dequeue=min_after_dequeue)
       return inputs_seqs, outputs
 
 if __name__ == "__main__":
   print("Generate Data")
-  gen = DataGenerator()
+
+  config = configuration.ModelConfig()
+
+  gen = DataGenerator(config.seq_length, config.batch_size, 10000)
   gen.generate_inputs_file()
-  print("Read data")
-  reader = DataReader()
-  with tf.Graph().as_default():
-    inputs_seqs, outputs = reader.read()
-    init_op = tf.group(tf.initialize_all_variables(),
-                       tf.initialize_local_variables())
-
-    sess = tf.Session()
-    sess.run(init_op)
-
-    coord = tf.train.Coordinator()
-    threads = tf.train.start_queue_runners(sess=sess, coord=coord)
-
-    try:
-      while not coord.should_stop():
-        inputs_seqs_batch, outputs_batch = sess.run([inputs_seqs, outputs])
-        print(inputs_seqs_batch, outputs_batch)
-    except tf.errors.OutOfRangeError:
-      print("Error")
-    finally:
-    # When done, ask the threads to stop.
-      coord.request_stop()
-    coord.join(threads)
-    sess.close()
+  # print("Read data")
+  # reader = DataReader()
+  # with tf.Graph().as_default():
+  #   inputs_seqs, outputs = reader.read()
+  #   init_op = tf.group(tf.initialize_all_variables(),
+  #                      tf.initialize_local_variables())
+  #
+  #   sess = tf.Session()
+  #   sess.run(init_op)
+  #
+  #   coord = tf.train.Coordinator()
+  #   threads = tf.train.start_queue_runners(sess=sess, coord=coord)
+  #   step = 0
+  #
+  #   try:
+  #     while not coord.should_stop():
+  #       inputs_seqs_batch, outputs_batch = sess.run([inputs_seqs, outputs])
+  #       print(inputs_seqs_batch, outputs_batch)
+  #       print(step)
+  #       step += 1
+  #   except tf.errors.OutOfRangeError:
+  #     print("Error")
+  #   finally:
+  #   # When done, ask the threads to stop.
+  #     coord.request_stop()
+  #   coord.join(threads)
+  #   sess.close()
