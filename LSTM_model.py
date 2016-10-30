@@ -44,9 +44,9 @@ class LSTM_model(object):
     self.cost = tf.reduce_mean(loss)
     self.final_state = state
 
-    # self.lr = tf.Variable(0.0, trainable=False)
+    # self.lr = tf.Variable(0.001, trainable=False)
     tvars = tf.trainable_variables()
     grads, _ = tf.clip_by_global_norm(tf.gradients(self.cost, tvars),
                                       config.grad_clip)
-    optimizer = tf.train.AdadeltaOptimizer()
+    optimizer = tf.train.AdamOptimizer()#self.lr)
     self.train_op = optimizer.apply_gradients(zip(grads, tvars))
