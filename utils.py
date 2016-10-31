@@ -78,21 +78,23 @@ class DataReader():
     self.batch_size = batch_size
     self.filename = os.path.join(data_directory, data_filename + ".tfrecords")
 
-  def read(self, shuffle=True):
+  def read(self, shuffle=True, num_epochs=None):
     with tf.name_scope('input'):
       reader = tf.TFRecordReader()
-      filename_queue = tf.train.string_input_producer([self.filename])
+      filename_queue = tf.train.string_input_producer([self.filename], num_epochs=num_epochs)
       _, serialized_input = reader.read(filename_queue)
       inputs = tf.parse_single_example(serialized_input,
-                                        features={
-                                         'inputs_seq': tf.FixedLenFeature([self.seq_len * 2 + 3], tf.int64),
-                                          'output': tf.FixedLenFeature([1], tf.int64)
-                                        })
+                                       features={
+                                       'inputs_seq': tf.FixedLenFeature([self.seq_len * 2 + 3], tf.int64),
+                                       'output': tf.FixedLenFeature([1], tf.int64)
+                                       })
       inputs_seq = inputs['inputs_seq']
       output = inputs['output']
       min_after_dequeue = 100
-      # inputs_seqs, outputs = tf.train.shuffle_batch([inputs_seq, output], batch_size=self.batch_size, num_threads=2, capacity=min_after_dequeue + 3 * self.batch_size, min_after_dequeue=min_after_dequeue)
-      inputs_seqs, outputs = tf.train.batch([inputs_seq, output], batch_size=1)
+      if shuffle:
+        inputs_seqs, outputs = tf.train.shuffle_batch([inputs_seq, output], batch_size=self.batch_size, num_threads=2, capacity=min_after_dequeue + 3 * self.batch_size, min_after_dequeue=min_after_dequeue)
+      else:
+        inputs_seqs, outputs = tf.train.batch([inputs_seq, output], batch_size=self.batch_size)
       return inputs_seqs, outputs
 
 if __name__ == "__main__":
@@ -121,8 +123,9 @@ if __name__ == "__main__":
     try:
       while not coord.should_stop():
         print(sess.run([inputs_seqs_batch, outputs_batch]))
+        print("shape: ", tf.shape(inputs_seqs_batch))
         global_steps += 1
-        print(global_steps)
+        print(global_steps * 64)
     except tf.errors.OutOfRangeError:
       print("Error")
     finally:
