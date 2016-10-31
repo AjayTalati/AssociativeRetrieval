@@ -32,23 +32,19 @@ def train(config):
         input_data, targets = sess.run([inputs_seqs_batch, outputs_batch])
         probs = sess.run([model.probs], {model.input_data: input_data,
                                                           model.targets: targets})
-        output = np.argmax(probs, axis=1)
+        probs = np.array(probs).reshape([-1, config.vocab_size])
         targets = np.array([t[0] for t in targets])
-        print(input_data)
-        print(output)
-        print(targets)
-        # print (output)
-        # print (targets)
-        # correct_count += np.sum(output == targets)
-        # evaled_count += len(targets)
-        print("\n\n")
+        output = np.argmax(probs, axis=1)
+
+        correct_count += np.sum(output == targets)
+        evaled_count += len(output)
 
     except tf.errors.OutOfRangeError:
-      print("Error")
+        pass
     finally:
       # When done, ask the threads to stop.
       coord.request_stop()
-    print("Accuracy: ", float(correct_count) / evaled_count)
+    print("Accuracy: %f" % (float(correct_count) / evaled_count))
     coord.join(threads)
     sess.close()
 
