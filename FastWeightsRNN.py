@@ -5,11 +5,13 @@ from tensorflow.python.ops import nn_ops
 from tensorflow.python.ops import rnn_cell
 from tensorflow.python.ops import variable_scope as vs
 from tensorflow.python.platform import tf_logging as logging
-from tensorflow.python.util import nest
 from tensorflow.contrib.layers.python.layers import utils
 from tensorflow.python.framework import ops
 from tensorflow.python.ops import nn
 from tensorflow.contrib.framework.python.ops import variables
+import tensorflow as tf
+import numpy as np
+import nest
 
 
 def layer_norm(inputs,
@@ -131,61 +133,55 @@ class LayerNormFastWeightsBasicRNNCell(rnn_cell.RNNCell):
       normalized = layer_norm(inp, reuse=self._reuse_norm, scope=scope)
       return normalized
 
-  def _linear(self, args, output_size, bias, bias_start=0.0, scope=None):
-    """Linear map: sum_i(args[i] * W[i]), where W[i] is a variable.
-    Args:
-      args: a 2D Tensor or a list of 2D, batch x n, Tensors.
-      output_size: int, second dimension of W[i].
-      bias: boolean, whether to add a bias term or not.
-      bias_start: starting value to initialize the bias; 0 by default.
-      scope: VariableScope for the created subgraph; defaults to "Linear".
-    Returns:
-      A 2D Tensor with shape [batch x output_size] equal to
-      sum_i(args[i] * W[i]), where W[i]s are newly created matrices.
-    Raises:
-      ValueError: if some of the arguments has unspecified or wrong shape.
-    """
+  def _fwlinear(self, args, output_size, scope=None):
     if args is None or (nest.is_sequence(args) and not args):
       raise ValueError("`args` must be specified")
     if not nest.is_sequence(args):
       args = [args]
-
-    # Calculate the total size of arguments on dimension 1.
-    total_arg_size = 0
-    shapes = [a.get_shape().as_list() for a in args]
-    for shape in shapes:
-      if len(shape) != 2:
-        raise ValueError("Linear is expecting 2D arguments: %s" % str(shapes))
-      if not shape[1]:
-        raise ValueError("Linear expects shape[1] of arguments: %s" % str(shapes))
-      else:
-        total_arg_size += shape[1]
+    assert len(args) == 2
+    assert args[0].get_shape().as_list()[1] == output_size
 
     dtype = [a.dtype for a in args][0]
 
-    # Now the computation. Matrix will be used multiple times in fast weights rnn, so reuse is True.
-    with vs.variable_scope(scope or "Linear", reuse=True):
-      matrix = vs.get_variable(
-        "Matrix", [total_arg_size, output_size], dtype=dtype)
-      if len(args) == 1:
-        res = math_ops.matmul(args[0], matrix)
-      else:
-        res = math_ops.matmul(array_ops.concat(1, args), matrix)
-      if not bias:
-        return res
-      bias_term = vs.get_variable(
-        "Bias", [output_size],
-        dtype=dtype,
-        initializer=init_ops.constant_initializer(
-          bias_start, dtype=dtype))
-    return res + bias_term
+    with vs.variable_scope(scope or "Linear"):
+      matrixW = vs.get_variable(
+        "MatrixW", dtype=dtype, initializer=tf.convert_to_tensor(np.eye(output_size, dtype=np.float32) * .05))
+
+      matrixC = vs.get_variable(
+        "MatrixC", [args[1].get_shape().as_list()[1], output_size], dtype=dtype)
+
+      res = tf.matmul(args[0], matrixW) + tf.matmul(args[1], matrixC)
+      return res
+
+  def zero_fast_weights(self, batch_size, dtype):
+    """Return zero-filled state tensor(s).
+
+    Args:
+      batch_size: int, float, or unit Tensor representing the batch size.
+      dtype: the data type to use for the state.
+
+    Returns:
+      If `state_size` is an int, then the return value is a `2-D` tensor of
+      shape `[batch_size x state_size]` filled with zeros.
+
+      If `state_size` is a nested list or tuple, then the return value is
+      a nested list or tuple (of the same structure) of `2-D` tensors with
+    the shapes `[batch_size x s]` for each s in `state_size`.
+    """
+    state_size = self.state_size
+
+    zeros = array_ops.zeros(
+        array_ops.pack([batch_size, state_size, state_size]), dtype=dtype)
+    zeros.set_shape([None, state_size, state_size])
+
+    return zeros
 
   def __call__(self, inputs, state, scope=None):
     state, fast_weights = state
     with vs.variable_scope(scope or type(self).__name__) as scope:
       """Compute Wh(t)+Cx(t)"""
-      linear = self._linear([inputs, state], self._num_units, False)
-      """Compute h_0(t+1) = f(Wh(t)+Cx(t)"""
+      linear = self._fwlinear([inputs, state], self._num_units, False)
+      """Compute h_0(t+1) = f(Wh(t)+Cx(t))"""
       if self._reuse_norm:
         h = self._activation(self._norm(linear, scope="Norm0"))
       else:
@@ -202,4 +198,4 @@ class LayerNormFastWeightsBasicRNNCell(rnn_cell.RNNCell):
       """Compute A(t+1)"""
       new_fast_weights = self._lambda * fast_weights + self._eta * math_ops.matmul(state, state, transpose_a=True)
 
-      return h, new_fast_weights
+      return h, (h, new_fast_weights)
