@@ -8,4 +8,5 @@ class ModelConfig(object):
     self.grad_clip = grad_clip
     self.vocab_size = 37
     self.data_filename = data_filename
+    self.embedding_size = 100
 

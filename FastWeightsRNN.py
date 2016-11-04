@@ -102,7 +102,7 @@ class LayerNormFastWeightsBasicRNNCell(rnn_cell.RNNCell):
     state, fast_weights = state
     with vs.variable_scope(scope or type(self).__name__) as scope:
       """Compute Wh(t)+Cx(t)"""
-      linear = self._fwlinear([inputs, state], self._num_units, False)
+      linear = self._fwlinear([state, inputs], self._num_units, False)
       """Compute h_0(t+1) = f(Wh(t)+Cx(t))"""
       if not self._reuse_norm:
         h = self._activation(self._norm(linear, scope="Norm0"))

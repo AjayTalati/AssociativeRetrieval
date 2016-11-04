@@ -20,7 +20,7 @@ class FW_model(object):
     self.initial_fast_weights = self.cell.zero_fast_weights(tf.shape(self.targets)[0], tf.float32)
 
     with tf.variable_scope("input_embedding"):
-      embedding = tf.get_variable("embedding", [config.vocab_size, config.rnn_size])
+      embedding = tf.get_variable("embedding", [config.vocab_size, config.embedding_size])
       inputs = tf.split(1, config.input_length, tf.nn.embedding_lookup(embedding, self.input_data))
       inputs = [tf.squeeze(input, [1]) for input in inputs]
 
