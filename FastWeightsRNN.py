@@ -43,8 +43,9 @@ class LayerNormFastWeightsBasicRNNCell(rnn_cell.RNNCell):
     return self._num_units
 
   def _norm(self, inp, scope=None):
+    reuse = tf.get_variable_scope().reuse
     with vs.variable_scope(scope or "Norm") as scope:
-      normalized = layer_norm(inp, reuse=self._reuse_norm, scope=scope)
+      normalized = layer_norm(inp, reuse=reuse, scope=scope)
       return normalized
 
   def _fwlinear(self, args, output_size, scope=None):

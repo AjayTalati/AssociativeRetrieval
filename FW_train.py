@@ -32,7 +32,7 @@ def train(config):
         global_steps += 1
         if global_steps % 1000 == 0:
           model.inference(sess, inputs_seqs_batch, outputs_batch)
-          print(saver.save(sess, "./save/LSTM/save", global_step=global_steps))
+          print(saver.save(sess, "./save/FW/save", global_step=global_steps))
     except tf.errors.OutOfRangeError:
       print("Error")
     finally:
