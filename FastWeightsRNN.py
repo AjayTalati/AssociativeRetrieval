@@ -91,11 +91,11 @@ class LayerNormFastWeightsBasicRNNCell(rnn_cell.RNNCell):
     return zeros
 
   def _vector2matrix(self, vector):
-    batch_size = tf.shape(vector).as_list()[0]
-    return tf.reshape([batch_size, 1, None])
+    memory_size = vector.get_shape().as_list()[1]
+    return tf.reshape(vector, [-1, memory_size, 1])
 
   def _matrix2vector(self, matrix):
-    return tf.squeeze(matrix, [1])
+    return tf.squeeze(matrix, [2])
 
   def __call__(self, inputs, state, scope=None):
     state, fast_weights = state
@@ -103,13 +103,15 @@ class LayerNormFastWeightsBasicRNNCell(rnn_cell.RNNCell):
       """Compute Wh(t)+Cx(t)"""
       linear = self._fwlinear([inputs, state], self._num_units, False)
       """Compute h_0(t+1) = f(Wh(t)+Cx(t))"""
-      if self._reuse_norm:
+      if not self._reuse_norm:
         h = self._activation(self._norm(linear, scope="Norm0"))
       else:
         h = self._activation(self._norm(linear))
+      h = self._vector2matrix(h)
+      linear = self._vector2matrix(linear)
       for i in range(self._S):
         """Compute h_{s+1}(t+1)=f([Wh(t)+Cx(t)]+A(t)h_s(t+1)) S times"""
-        if self._reuse_norm:
+        if not self._reuse_norm:
           h = self._activation(self._norm(linear +
                                           math_ops.batch_matmul(fast_weights, h), scope="Norm%d" % (i + 1)))
         else:
@@ -117,6 +119,9 @@ class LayerNormFastWeightsBasicRNNCell(rnn_cell.RNNCell):
                                           math_ops.batch_matmul(fast_weights, h)))
 
       """Compute A(t+1)"""
-      new_fast_weights = self._lambda * fast_weights + self._eta * math_ops.batch_matmul(state, state, transpose_a=True)
+      state = self._vector2matrix(state)
+      new_fast_weights = self._lambda * fast_weights + self._eta * math_ops.batch_matmul(state, state, adj_y=True)
+
+      h = self._matrix2vector(h)
 
       return h, (h, new_fast_weights)
