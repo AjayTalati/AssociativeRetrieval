@@ -90,6 +90,13 @@ class LayerNormFastWeightsBasicRNNCell(rnn_cell.RNNCell):
 
     return zeros
 
+  def _vector2matrix(self, vector):
+    batch_size = tf.shape(vector).as_list()[0]
+    return tf.reshape([batch_size, 1, None])
+
+  def _matrix2vector(self, matrix):
+    return tf.squeeze(matrix, [1])
+
   def __call__(self, inputs, state, scope=None):
     state, fast_weights = state
     with vs.variable_scope(scope or type(self).__name__) as scope:
@@ -110,6 +117,6 @@ class LayerNormFastWeightsBasicRNNCell(rnn_cell.RNNCell):
                                           math_ops.batch_matmul(fast_weights, h)))
 
       """Compute A(t+1)"""
-      new_fast_weights = self._lambda * fast_weights + self._eta * math_ops.matmul(state, state, transpose_a=True)
+      new_fast_weights = self._lambda * fast_weights + self._eta * math_ops.batch_matmul(state, state, transpose_a=True)
 
       return h, (h, new_fast_weights)
