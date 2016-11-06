@@ -76,19 +76,14 @@ class LayerNormFastWeightsBasicRNNCell(rnn_cell.RNNCell):
       return res
 
   def zero_fast_weights(self, batch_size, dtype):
-    """Return zero-filled state tensor(s).
+    """Return zero-filled fast_weights tensor(s).
 
     Args:
       batch_size: int, float, or unit Tensor representing the batch size.
       dtype: the data type to use for the state.
 
     Returns:
-      If `state_size` is an int, then the return value is a `2-D` tensor of
-      shape `[batch_size x state_size]` filled with zeros.
-
-      If `state_size` is a nested list or tuple, then the return value is
-      a nested list or tuple (of the same structure) of `2-D` tensors with
-    the shapes `[batch_size x s]` for each s in `state_size`.
+      A zero filled fast_weights of shape [batch_size, state_size, state_size]
     """
     state_size = self.state_size
 
