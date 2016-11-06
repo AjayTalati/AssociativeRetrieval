@@ -1,3 +1,8 @@
+"""
+Fast weights evaluation part.
+"""
+
+
 import tensorflow as tf
 import configuration
 import numpy as np

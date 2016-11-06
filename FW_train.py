@@ -1,3 +1,8 @@
+"""
+Fast weights training part.
+"""
+
+
 import tensorflow as tf
 import configuration
 

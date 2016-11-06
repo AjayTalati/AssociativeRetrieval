@@ -1,3 +1,10 @@
+"""
+Fast Weights Cell.
+
+Ba et al. Using Fast Weights to Attend to the Recent Past
+https://arxiv.org/abs/1610.06258
+"""
+
 from tensorflow.python.ops import array_ops
 from tensorflow.python.ops import init_ops
 from tensorflow.python.ops import math_ops
@@ -101,9 +108,9 @@ class LayerNormFastWeightsBasicRNNCell(rnn_cell.RNNCell):
   def __call__(self, inputs, state, scope=None):
     state, fast_weights = state
     with vs.variable_scope(scope or type(self).__name__) as scope:
-      """Compute Wh(t)+Cx(t)"""
+      """Compute Wh(t) + Cx(t)"""
       linear = self._fwlinear([state, inputs], self._num_units, False)
-      """Compute h_0(t+1) = f(Wh(t)+Cx(t))"""
+      """Compute h_0(t+1) = f(Wh(t) + Cx(t))"""
       if not self._reuse_norm:
         h = self._activation(self._norm(linear, scope="Norm0"))
       else:
@@ -111,7 +118,10 @@ class LayerNormFastWeightsBasicRNNCell(rnn_cell.RNNCell):
       h = self._vector2matrix(h)
       linear = self._vector2matrix(linear)
       for i in range(self._S):
-        """Compute h_{s+1}(t+1)=f([Wh(t)+Cx(t)]+A(t)h_s(t+1)) S times"""
+        """
+        Compute h_{s+1}(t+1) = f([Wh(t) + Cx(t)] + A(t) h_s(t+1)), S times.
+        See Eqn (2) in the paper.
+        """
         if not self._reuse_norm:
           h = self._activation(self._norm(linear +
                                           math_ops.batch_matmul(fast_weights, h), scope="Norm%d" % (i + 1)))
@@ -119,7 +129,9 @@ class LayerNormFastWeightsBasicRNNCell(rnn_cell.RNNCell):
           h = self._activation(self._norm(linear +
                                           math_ops.batch_matmul(fast_weights, h)))
 
-      """Compute A(t+1)"""
+      """
+      Compute A(t+1)  according to Eqn (4)
+      """
       state = self._vector2matrix(state)
       new_fast_weights = self._lambda * fast_weights + self._eta * math_ops.batch_matmul(state, state, adj_y=True)
 
