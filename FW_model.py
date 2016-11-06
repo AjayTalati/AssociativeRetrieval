@@ -9,7 +9,38 @@ class FW_model(object):
   def __init__(self, config=None, mode=None):
     self.config = config
     self.mode = mode
+    self.build_graph()
+    self.load_validation()
 
+  def load_validation(self):
+    data_reader = utils.DataReader(data_filename="input_seqs_validation", batch_size=16)
+    inputs_seqs_batch, outputs_batch = data_reader.read(False, 1)
+    init_op = tf.group(tf.initialize_all_variables(),
+                       tf.initialize_local_variables())
+
+    sess = tf.Session()
+    sess.run(init_op)
+    coord = tf.train.Coordinator()
+    threads = tf.train.start_queue_runners(sess=sess, coord=coord)
+    self.validation_inputs = []
+    self.validation_targets = []
+    try:
+      while not coord.should_stop():
+        input_data, targets = sess.run([inputs_seqs_batch, outputs_batch])
+        self.validation_inputs.append(input_data)
+        self.validation_targets.append(targets)
+    except tf.errors.OutOfRangeError:
+      pass
+    finally:
+      coord.request_stop()
+    coord.join(threads)
+    sess.close()
+
+    self.validation_inputs = np.array(self.validation_inputs).reshape([-1, self.config.input_length])
+    self.validation_targets = np.array(self.validation_targets).reshape([-1, 1])
+
+  def build_graph(self):
+    config = self.config
     self.reader = utils.DataReader(seq_len=config.seq_length, batch_size=config.batch_size, data_filename=config.data_filename)
 
     self.cell = LayerNormFastWeightsBasicRNNCell(num_units=config.rnn_size)
@@ -54,10 +85,9 @@ class FW_model(object):
     optimizer = tf.train.AdamOptimizer()  # self.lr)
     self.train_op = optimizer.apply_gradients(zip(grads, tvars))
 
-  def inference(self, sess, input_data, targets):
-    input_data, targets = sess.run([input_data, targets])
-    probs = sess.run(self.probs, {self.input_data: input_data,
-                                  self.targets: targets})
+  def inference(self, sess):
+    probs = sess.run(self.probs, {self.input_data: self.validation_inputs,
+                                self.targets: self.validation_targets})
     output = np.argmax(probs, axis=1)
-    targets = np.array([t[0] for t in targets])
-    print("Accuracy: ", np.sum(output == targets) / float(len(targets)))
+    output = output.reshape([-1, 1])
+    print("Accuracy: %f" % (np.sum(output == self.validation_targets) / float(self.validation_targets.shape[0])))

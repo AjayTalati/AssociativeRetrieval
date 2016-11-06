@@ -1,6 +1,2 @@
-model_checkpoint_path: "save-78000"
-all_model_checkpoint_paths: "save-74000"
-all_model_checkpoint_paths: "save-75000"
-all_model_checkpoint_paths: "save-76000"
-all_model_checkpoint_paths: "save-77000"
-all_model_checkpoint_paths: "save-78000"
+model_checkpoint_path: "save-1000"
+all_model_checkpoint_paths: "save-1000"
