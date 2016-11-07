@@ -69,6 +69,8 @@ class FW_model(object):
       softmax_b = tf.get_variable("softmax_b", [config.vocab_size])
       self.logits = tf.matmul(output, softmax_w) + softmax_b
       self.probs = tf.nn.softmax(self.logits)
+      self.output = tf.cast(tf.reshape(tf.arg_max(self.probs, 1), [-1, 1]), tf.int32)
+      self.accuracy = tf.reduce_mean(tf.cast(tf.equal(self.output, self.targets), tf.float32))
 
     loss = seq2seq.sequence_loss_by_example([self.logits],
                                             [tf.reshape(self.targets, [-1])],
@@ -86,8 +88,6 @@ class FW_model(object):
     self.train_op = optimizer.apply_gradients(zip(grads, tvars))
 
   def inference(self, sess):
-    probs = sess.run(self.probs, {self.input_data: self.validation_inputs,
+    accuracy = sess.run([self.accuracy], {self.input_data: self.validation_inputs,
                                 self.targets: self.validation_targets})
-    output = np.argmax(probs, axis=1)
-    output = output.reshape([-1, 1])
-    print("Accuracy: %f" % (np.sum(output == self.validation_targets) / float(self.validation_targets.shape[0])))
+    print("Accuracy: %f" % accuracy)
