@@ -39,12 +39,12 @@ def train(config):
 
         global_steps += 1
         if global_steps % 1000 == 0:
-          # (accuracy, summary) = sess.run([model.accuracy, model.summary_accuracy], {model.input_data: model.validation_inputs,
-          #                                                                           model.targets: model.validation_targets})
-          # validation_writer.add_summary(summary, global_steps)
-          # print("Accuracy: %f" % accuracy)
+          (accuracy, summary) = sess.run([model.accuracy, model.summary_accuracy], {model.input_data: model.validation_inputs,
+                                                                                    model.targets: model.validation_targets})
+          validation_writer.add_summary(summary, global_steps)
+          print("Accuracy: %f" % accuracy)
           print(saver.save(sess, "./save/FW/save", global_step=global_steps))
-        if global_steps > 30000:
+        if global_steps > 60000:
           break
     except tf.errors.OutOfRangeError:
       print("Error")

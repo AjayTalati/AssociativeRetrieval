@@ -23,7 +23,7 @@ def train(config):
     coord = tf.train.Coordinator()
     threads = tf.train.start_queue_runners(sess=sess, coord=coord)
 
-    saver.restore(sess, "./save/LSTM/save-1000")
+    saver.restore(sess, "./save/LSTM/save-60000")
 
     correct_count = 0
     evaled_count = 0

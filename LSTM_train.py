@@ -40,7 +40,7 @@ def train(config):
           print("Accuracy: %f" % accuracy)
           print(saver.save(sess, "./save/LSTM/save", global_step=global_steps))
 
-        if global_steps > 30000:
+        if global_steps > 60000:
           break
     except tf.errors.OutOfRangeError:
       print("Error")
