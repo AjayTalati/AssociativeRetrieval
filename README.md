@@ -14,11 +14,11 @@ The fast weights model can achieve ***100%*** accuracy (***0%*** error rate) on 
 Running result as follows:
 
 **Fast Weights:**
-<img src="chart/FW_accuracy.png" height="400">
-<img src="(chart/FW_cost.png" height="400">
+<img src="chart/FW_accuracy.png" width="400">
+<img src="chart/FW_cost.png" width="400">
 **LSTM**
-<img src="chart/LSTM_accuracy.png" height="400">
-<img src=chart/LSTM_cost.png", height="400">
+<img src="chart/LSTM_accuracy.png" width="400">
+<img src="chart/LSTM_cost.png" width="400">
 
 Both trained on GTX 980 Ti, with TensorFlow 0.11rc1.
 
