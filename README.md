@@ -13,14 +13,15 @@ The fast weights model can achieve ***100%*** accuracy (***0%*** error rate) on 
 
 Running result as follows:
 
-*Fast Weights:*
+**Fast Weights:**
 ![](chart/FW_accuracy.png)
 ![](chart/FW_cost.png)
-*LSTM*
+**LSTM**
 ![](chart/LSTM_accuracy.png)
 ![](chart/LSTM_cost.png)
 
 Both trained on GTX 980 Ti, with TensorFlow 0.11rc1.
+
 Setting on R=50, using TensorFlow default Adam optimizer.
 
 ## Train the fast weights model
