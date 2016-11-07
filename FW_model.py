@@ -10,7 +10,7 @@ class FW_model(object):
     self.config = config
     self.mode = mode
     self.build_graph()
-    self.load_validation()
+    # self.load_validation()
 
   def load_validation(self):
     data_reader = utils.DataReader(data_filename="input_seqs_validation", batch_size=16)
