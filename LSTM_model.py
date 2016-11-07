@@ -86,8 +86,6 @@ class LSTM_model(object):
     optimizer = tf.train.AdamOptimizer()#self.lr)
     self.train_op = optimizer.apply_gradients(zip(grads, tvars))
 
-
-  def inference(self, sess):
-    accuracy = sess.run([self.accuracy], {self.input_data: self.validation_inputs,
-                                  self.targets: self.validation_targets})
-    print("Accuracy: %f" % accuracy)
+    self.summary_accuracy = tf.scalar_summary('accuracy', self.accuracy)
+    tf.scalar_summary('cost', self.cost)
+    self.summary_all = tf.merge_all_summaries()

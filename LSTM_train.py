@@ -22,17 +22,26 @@ def train(config):
     coord = tf.train.Coordinator()
     threads = tf.train.start_queue_runners(sess=sess, coord=coord)
 
+    train_writer = tf.train.SummaryWriter("./log/LSTM/train", sess.graph)
+    validation_writer = tf.train.SummaryWriter("./log/LSTM/validation", sess.graph)
     try:
       while not coord.should_stop():
         input_data, targets = sess.run([inputs_seqs_batch, outputs_batch])
-        cost, _ = sess.run([model.cost, model.train_op], {model.input_data: input_data,
-                                                          model.targets: targets})
+        cost, _, summary= sess.run([model.cost, model.train_op, model.summary_all], {model.input_data: input_data,
+                                                                                 model.targets: targets})
         print("Step %d: cost:%f" % (global_steps,  cost))
+        train_writer.add_summary(summary, global_steps)
 
         global_steps += 1
         if global_steps % 1000 == 0:
-          model.inference(sess)
+          (accuracy, summary) = sess.run([model.accuracy, model.summary_accuracy], {model.input_data: model.validation_inputs,
+                                                   model.targets: model.validation_targets})
+          validation_writer.add_summary(summary, global_steps)
+          print("Accuracy: %f" % accuracy)
           print(saver.save(sess, "./save/LSTM/save", global_step=global_steps))
+
+        if global_steps > 30000:
+          break
     except tf.errors.OutOfRangeError:
       print("Error")
     finally:
@@ -40,6 +49,8 @@ def train(config):
       coord.request_stop()
     coord.join(threads)
     sess.close()
+    train_writer.close()
+    validation_writer.close()
 
 if __name__ == "__main__":
   main()
