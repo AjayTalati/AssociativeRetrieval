@@ -13,13 +13,19 @@ The fast weights model can achieve ***100%*** accuracy (***0%*** error rate) on 
 
 Running result as follows:
 
-**Fast Weights:**
+**Fast Weights(with layernorm):**
 
 <img src="chart/FW_accuracy.png" width="600">
 
 <img src="chart/FW_cost.png" width="600">
 
-**LSTM**
+**Fast Weights(without layernorm):**
+
+<img src="chart/FW_accuracy_no_norm.png" width="600">
+
+<img src="chart/FW_cost_no_norm.png" width="600">
+
+**LSTM:**
 
 <img src="chart/LSTM_accuracy.png" width="600">
 
