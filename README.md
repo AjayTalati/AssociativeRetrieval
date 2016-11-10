@@ -25,7 +25,13 @@ Running result as follows:
 
 <img src="chart/FW_cost_no_norm.png" width="600">
 
-**LSTM:**
+**LSTM(with layernorm):**
+
+<img src="chart/LSTM_accuracy_norm.png" width="600">
+
+<img src="chart/LSTM_cost_norm.png" width="600">
+
+**LSTM(without layernorm):**
 
 <img src="chart/LSTM_accuracy.png" width="600">
 
